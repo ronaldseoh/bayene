@@ -2,12 +2,6 @@
 ilp_solver.py: This is Bayene's interface to ILP solvers, which in turn based on
 Pyomo's solver interfaces. Every code pieces within Bayene that sends
 ILP problems to the solver must use this.
-
-#########################################################
-# OR499 Management Science Dissertation, Lent Term 2015 #
-# The London School of Economics and Political Science  #
-# Candidate Number 64357                                #
-#########################################################
 """
 
 from pyomo.environ import *

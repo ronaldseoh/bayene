@@ -1,12 +1,6 @@
 """
 bayesian_network.py: This is the main entry point to classifiers in Bayene package,
 with class definitions for the variations of Bayesian Network classifiers provided by Bayene.
-
-#########################################################
-# OR499 Management Science Dissertation, Lent Term 2015 #
-# The London School of Economics and Political Science  #
-# Candidate Number 64357                                #
-#########################################################
 """
 import os
 from pyutilib.services import TempfileManager

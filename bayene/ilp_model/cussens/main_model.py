@@ -2,12 +2,6 @@
 main_model.py: We define the class 'model_writer' for our main ILP model, which essentially is a collection of
 the main Pyomo model object and functions to create additional Constraint objects within the main model object
 if needed during the solution process.
-
-#########################################################
-# OR499 Management Science Dissertation, Lent Term 2015 #
-# The London School of Economics and Political Science  #
-# Candidate Number 64357                                #
-#########################################################
 """
 from pyomo.environ import *
 

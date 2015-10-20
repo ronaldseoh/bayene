@@ -1,11 +1,5 @@
 """
 cussens_files.py:
-
-#########################################################
-# OR499 Management Science Dissertation, Lent Term 2015 #
-# The London School of Economics and Political Science  #
-# Candidate Number 64357                                #
-#########################################################
 """
 import numpy as np
 
