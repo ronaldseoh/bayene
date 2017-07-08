@@ -18,6 +18,8 @@ def call_solver(model, options, **kwargs):
         # For CPLEX and Gurobi, make use of their Python APIs
         if kwargs['solver'] == 'gurobi':
             opt = SolverFactory(kwargs['solver'], solver_io='python')
+        else:
+            opt = SolverFactory(kwargs['solver'])
 
         # Copy from custom solver options dictionary
         opt.options.update(options)

@@ -22,24 +22,24 @@ def read_cussens_data(data_file_object, names = False, arities = True):
 	dataset_arities = []
 	
 	# Read the very first line of the file and get the total number of attributes
-	n_attributes = int(data_file_object.next().rstrip())
-	print "Total number of attributes: " + n_attributes
+	n_attributes = int(data_file_object.readline().rstrip())
+	print("Total number of attributes: " + n_attributes)
 	
-	if names == True:
-		dataset_names = data_file_object.next().split()
+	if names:
+		dataset_names = data_file_object.readline().split()
 	else:
 		dataset_names = range(n_attributes)
 	
-	if arities == True:
-		dataset_arities = [int(i) for i in data_file_object.next().split()]
+	if arities:
+		dataset_arities = [int(i) for i in data_file_object.readline().split()]
 	
-	n_samples = int(data_file_object.next().rstrip())
+	n_samples = int(data_file_object.readline().rstrip())
 	
 	dataset_data = np.loadtxt(data_file_object, dtype=int)
 	
 	# If arities are not given, assume that the number of unique elements for each variables
 	# are full arities
-	if arities == False:
+	if not arities:
 		for column in dataset_data.T:
 			dataset_arities.append(len(np.unique(column)))
 	
@@ -53,21 +53,25 @@ def read_cussens_scores(score_file_object):
 	# (ex. 0 10 means the variable is 0th variable and have 10 candidate parent sets).
 	# The lines after that are calculated scores for each candidate parent set.
 	# First token: Score, 2nd: number of parents, the rest: serial number of parent nodes
-	
+
 	# Store scores here
 	dataset_scores = []
 	dataset_all_parents = []
-	
+
 	# Read the very first line of the file and get the total number of attributes
-	n_attributes = score_file_object.next().rstrip()
-	print "Total number of attributes: " + n_attributes
+	n_attributes = score_file_object.readline().rstrip()
+	print("Total number of attributes: " + n_attributes)
 	
 	# Read exactly the number of attributes specified by n_attributes, no more
-	for line in score_file_object:
+	file_read_complete = False
+	while not file_read_complete:
 		
-		current_line_tokens = line.split()
-		
-		if len(current_line_tokens) == 2:
+		current_line_tokens = score_file_object.readline().split()
+
+		if len(current_line_tokens) == 0:
+			file_read_complete = True
+
+		elif len(current_line_tokens) == 2:
 			current_attribute_serial = int(current_line_tokens[0])
 			
 			# current_line_tokens[1] shows the number of candidates this attribute have
@@ -77,7 +81,7 @@ def read_cussens_scores(score_file_object):
 			current_attribute_candidate_scores = {}
 			
 			while loop_counter > 0:
-				candidate_line_tokens = score_file_object.next().split()
+				candidate_line_tokens = score_file_object.readline().split()
 				
 				# Check if the candidate being examined was previously detected earlier
 				current_candidate = [int(i) for i in candidate_line_tokens[2:]]

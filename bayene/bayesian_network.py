@@ -9,7 +9,9 @@ from bayene.ilp_model import cussens
 
 class cussensILPBN():
 
-	def __init__(self, score_type='bdeu', n_parents=2, solver='gurobi', cycle_finding=True, gomory_cut=True, sink_heuristic=True, **kwargs):
+	def __init__(self, score_type='bdeu', n_parents=2, 
+	             solver='gurobi',
+				 cycle_finding=True, gomory_cut=True, sink_heuristic=True, **kwargs):
 		# Get all the temp files to the current working directory
 		TempfileManager.tempdir = os.getcwd()
 		
@@ -52,7 +54,14 @@ class cussensILPBN():
 		pass
 
 	def _fit_scores(self, scores, parent_candidates):
-		if self.extra_constraints <> None:
-			return cussens.solve_model(scores, parent_candidates, self.solver, cycle_finding=self.cycle_finding, gomory_cut=self.gomory_cut, sink_heuristic=self.sink_heuristic, extra_constraints=self.extra_constraints)
+		if self.extra_constraints:
+			return cussens.solve_model(scores, parent_candidates, 
+		            self.solver, 
+					cycle_finding=self.cycle_finding, gomory_cut=self.gomory_cut, 
+					sink_heuristic=self.sink_heuristic, extra_constraints=self.extra_constraints
+			)
 		else:
-			return cussens.solve_model(scores, parent_candidates, self.solver, cycle_finding=self.cycle_finding, gomory_cut=self.gomory_cut, sink_heuristic=self.sink_heuristic)
+			return cussens.solve_model(scores, parent_candidates, 
+		            self.solver, cycle_finding=self.cycle_finding, gomory_cut=self.gomory_cut,
+					sink_heuristic=self.sink_heuristic
+			)

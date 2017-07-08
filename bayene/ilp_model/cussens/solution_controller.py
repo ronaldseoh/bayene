@@ -1,6 +1,7 @@
 """
 solution_controller.py: 
 """
+import six
 import sys
 import copy
 import operator
@@ -8,8 +9,8 @@ import networkx as nx
 from pyomo.opt import TerminationCondition
 import bayene.ilp_solver
 
-import main_model
-import cluster_cut_model
+from . import main_model
+from . import cluster_cut_model
 
 def generate_solver_options(solver, gomory_cut):
 	options = {}
@@ -24,7 +25,9 @@ def generate_solver_options(solver, gomory_cut):
 		options["MIPFocus"] = 2
 		options["ScaleFlag"] = 0
 		options["Cuts"] = 0 # Global Cut Off
-		if gomory_cut: options["GomoryPasses"] = 20000000 # Turn on Gomory Fractional Cut (Unlimited number)
+		if gomory_cut:
+			# Turn on Gomory Fractional Cut (Unlimited number)
+			options["GomoryPasses"] = 20000000
 
 	return options
 
@@ -50,32 +53,38 @@ def solve_model(scores, parents, solver, cycle_finding, gomory_cut, sink_heurist
 	solver_results = None
 	best_solution = None
 
-	best_cutoff_value = - sys.maxint
+	best_cutoff_value = - sys.maxsize
 	
 	objective_progress = []
 	heuristic_progress = []
 
-	while optimal_solution_found == False:
+	while not optimal_solution_found:
 		# Print empty lines between each iteration for better readability
-		print ''
+		print()
 		if sink_heuristic:
-			print 'Current cutoff value = ' + str(best_cutoff_value)
+			print('Current cutoff value = ' + str(best_cutoff_value))
 		
 		# Send the current problem to the solver
-		solver_results = bayene.ilp_solver.call_solver(current_problem.main_model, solver_options, solver = solver, warmstart = True)
+		solver_results = bayene.ilp_solver.call_solver(
+			current_problem.main_model, solver_options, solver=solver, warmstart=True
+		)
 		
 		# If the problem is found infeasible, stop the solving process
 		if solver_results.solver.termination_condition == TerminationCondition.infeasible:
 			optimal_solution_found = True
 			continue
 		else:
-			print 'Current problem solved successfully, Objective Value = ' + str(current_problem.main_model.objective())
+			print(
+				'Current problem solved successfully, Objective Value = '
+				+ str(current_problem.main_model.objective())
+			)
 				
 		# Get all the non-zero variables in the main model		
 		current_non_zero_solution = {}
 		
-		# We need float() and .value because non_zero_value here is a Pyomo object (Don't make a fuss with Pyomo functions)
-		for non_zero_key, non_zero_value in current_problem.main_model.chosen_parent_variable.iteritems():
+		# We need float() and .value because non_zero_value here
+		# is a Pyomo object (Don't make a fuss with Pyomo functions)
+		for non_zero_key, non_zero_value in six.iteritems(current_problem.main_model.chosen_parent_variable):
 			if float(non_zero_value.value) > 0.0:
 				current_non_zero_solution[(non_zero_key[0], non_zero_key[1])] = float(non_zero_value.value)
 						
@@ -85,7 +94,7 @@ def solve_model(scores, parents, solver, cycle_finding, gomory_cut, sink_heurist
 		
 		# Cluster (Sub-IP)
 		# Generate IP Cluster Cut Finding Model
-		print 'Searching for CLUSTER CUTS..'
+		print('Searching for CLUSTER CUTS..')
 		cluster_cut_applied = False
 
 		# Generate cluster cut sub-ip problem
@@ -102,36 +111,36 @@ def solve_model(scores, parents, solver, cycle_finding, gomory_cut, sink_heurist
 		and cluster_cuts_sub_ip_problem.main_model.objective() > -1:
 		
 			# Check if found cluster size > 0
-			cluster_members = [node_key for node_key in xrange(len(scores_input))
+			cluster_members = [node_key for node_key in range(len(scores_input))
 							   if float(cluster_cuts_sub_ip_problem.main_model.cluster_member_variable[node_key].value) > 0]
 			
 			if len(cluster_members) > 0:
-				print 'Adding CLUSTER cuts to new problem.'
+				print('Adding CLUSTER cuts to new problem.')
 				current_problem.add_cluster_cuts(cluster_members)
 				cluster_cut_applied = True
 			else:
-				print 'NO CLUSTER cuts applicable.'
+				print('NO CLUSTER cuts applicable.')
 		else:				
-			print 'NO CLUSTER cuts applicable. Cluster Cut Sub-IP could not be solved.'
+			print('NO CLUSTER cuts applicable. Cluster Cut Sub-IP could not be solved.')
 		
 		# Cycle cuts
 		cycle_cut_applied = False
 		if cycle_finding_input:
-			print 'Searching for CYCLE cuts..'
+			print('Searching for CYCLE cuts..')
 			cycles_found = find_cycles(current_problem.main_model)
 			if len(cycles_found) > 0:
-				print 'Adding CYCLE cuts to new problem.'
+				print('Adding CYCLE cuts to new problem.')
 				current_problem.add_cycle_cuts(cycles_found)
 				cycle_cut_applied = True
 			else:
-				print 'NO CYCLE cuts applicable.'
+				print('NO CYCLE cuts applicable.')
 		
 		####################
 		#### Heuristics ####
 		####################
 		# Sink-Finding Heuristic
 		if sink_heuristic:
-			print 'Performing Sink-finding algorithm..'
+			print('Performing Sink-finding algorithm..')
 			heuristic_total_score, heuristic_solutions, sink_heuristic_found = find_sink_heuristic(current_problem)
 		
 		#####################################
@@ -141,10 +150,11 @@ def solve_model(scores, parents, solver, cycle_finding, gomory_cut, sink_heurist
 		if cluster_cut_applied or cycle_cut_applied:
 		
 			objective_progress.append(current_problem.main_model.objective())
+
 			# If we have a heuristic solution, substitute current_problem with new_problem (which contains a heuristic solution)
 			# to allow the solver to make use of the solution.
 			if sink_heuristic and sink_heuristic_found:
-				print 'Sink heuristic solution score = ' + str(heuristic_total_score)
+				print('Sink heuristic solution score = ' + str(heuristic_total_score))
 				
 				# Use the total score obtained to be used as cutoff value
 				if heuristic_total_score > best_cutoff_value:
@@ -157,21 +167,21 @@ def solve_model(scores, parents, solver, cycle_finding, gomory_cut, sink_heurist
 				current_problem.main_model.chosen_parent_variable.reset()
 				
 				# Insert the solutions found from sink-finding for warmstart
-				for heuristic_key, heuristic_value in heuristic_solutions.iteritems():
+				for heuristic_key, heuristic_value in six.iteritems(heuristic_solutions):
 					current_problem.main_model.chosen_parent_variable[(heuristic_key[0], heuristic_key[1])].set_value(heuristic_value)
 					
 			# Go to the next iteration of this loop
 			continue
 
 		# If we don't we need to solve the problem again, the optimal solution is found.
-		print 'INTEGER solution found!'
+		print('INTEGER solution found!')
 		best_solution = copy.deepcopy(current_problem)
 		optimal_solution_found = True
 			
-	print 'Final Objective Value: ' + str(best_solution.main_model.objective())
-	print 'Number of Cluster Cut Iteration: ' + str(best_solution.add_cluster_cuts_count)
-	print 'Number of Cycle Cut Iteration: ' + str(best_solution.add_cycle_cuts_count)
-	print 'Number of Total Cycle Cuts: ' + str(best_solution.add_cycle_total_count)
+	print('Final Objective Value: ' + str(best_solution.main_model.objective()))
+	print('Number of Cluster Cut Iteration: ' + str(best_solution.add_cluster_cuts_count))
+	print('Number of Cycle Cut Iteration: ' + str(best_solution.add_cycle_cuts_count))
+	print('Number of Total Cycle Cuts: ' + str(best_solution.add_cycle_total_count))
 	
 	return best_solution, solver_results, objective_progress, heuristic_progress
 
@@ -212,7 +222,7 @@ def find_sink_heuristic(current_problem):
 		node_closest_parent = -1
 		current_best_distance = sys.maxint
 			
-		for best_scores_node, best_scores_parent in best_scores_each_node_index.iteritems():
+		for best_scores_node, best_scores_parent in six.iteritems(best_scores_each_node_index):
 			distance_to_one = 1.0 - float(current_problem.main_model.chosen_parent_variable[(best_scores_node, best_scores_parent)].value)
 			if distance_to_one < current_best_distance:
 				node_closest = best_scores_node
@@ -223,14 +233,14 @@ def find_sink_heuristic(current_problem):
 		heuristic_solutions[node_closest, node_closest_parent] = 1
 				
 		# Rule out all the parent candidates that has this node as member
-		for other_node in xrange(len(scores_input)):
+		for other_node in range(len(scores_input)):
 			for other_node_parent in scores_input[other_node].keys():
 				if node_closest in parents_input[other_node_parent]:
 					heuristic_solutions[(other_node, other_node_parent)] = 0
 				
 		# Rule out other candidates for this node
 		for this_node_other_parent in scores_input[node_closest].keys():
-			if this_node_other_parent <> node_closest_parent:
+			if this_node_other_parent != node_closest_parent:
 				heuristic_solutions[node_closest, this_node_other_parent] = 0
 				
 		variables_to_decide.remove(node_closest)
@@ -256,7 +266,7 @@ def convert_to_graph(instance):
 		
 	bn_graph = nx.DiGraph()
 		
-	for var_key, var_value in instance.chosen_parent_variable.iteritems():
+	for var_key, var_value in six.iteritems(instance.chosen_parent_variable):
 		if float(var_value.value) > 0.99:
 			# Check which nodes are in this parent set candidate
 			for parent in parents_input[var_key[1]]:

@@ -13,11 +13,11 @@ class model_writer():
         self.main_model.parent_set_variable = Var(current_non_zero_solution.keys(), domain = Binary)
         
         # Among all the variable nodes, we choose the ones to be included in the cluster
-        self.main_model.cluster_member_variable = Var(xrange(n_variables), domain = Binary)
+        self.main_model.cluster_member_variable = Var(range(n_variables), domain = Binary)
         
         # -|C| + sum[x(W->v) * J(W->v)] > -1 ==> sum[x(W->v) * J(W->v)] -|C| > -1
         def cluster_cut_objective_rule(model):
-            return sum(current_non_zero_solution[key] * model.parent_set_variable[key] for key in current_non_zero_solution.keys()) - sum(model.cluster_member_variable[node] for node in xrange(n_variables))
+            return sum(current_non_zero_solution[key] * model.parent_set_variable[key] for key in current_non_zero_solution.keys()) - sum(model.cluster_member_variable[node] for node in range(n_variables))
         
         self.main_model.objective = Objective(rule = cluster_cut_objective_rule, sense = maximize)
     
@@ -34,6 +34,6 @@ class model_writer():
         self.main_model.cluster_size_at_least_two = Constraint(expr = summation(self.main_model.cluster_member_variable) >= 2)
         
         def objective_bigger_than_minus_one_rule(model):
-            return sum(current_non_zero_solution[key] * model.parent_set_variable[key] for key in current_non_zero_solution.keys()) - sum(model.cluster_member_variable[node] for node in xrange(n_variables)) >= -1
+            return sum(current_non_zero_solution[key] * model.parent_set_variable[key] for key in current_non_zero_solution.keys()) - sum(model.cluster_member_variable[node] for node in range(n_variables)) >= -1
         
         self.main_model.objective_bigger_than_minus_one = Constraint(rule = objective_bigger_than_minus_one_rule)

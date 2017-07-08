@@ -74,7 +74,7 @@ class model_writer():
     
         # Generate and add constraints for each cycles found
         self.main_model.add_component('cycleCons'+str(self.add_cycle_cuts_count)+'_branch_'+str(self.add_branching_count)+'_'+str(self.add_cycle_total_count),
-                                     Constraint(xrange(len(self.cycles)), rule=cycle_cuts_rule))
+                                     Constraint(range(len(self.cycles)), rule=cycle_cuts_rule))
 
     def add_branching(self, variable_to_branch_key, direction):
         self.add_branching_count += 1
